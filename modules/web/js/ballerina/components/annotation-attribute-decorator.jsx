@@ -34,43 +34,39 @@ class AnnotationAttributeDecorator extends React.Component {
     constructor(props) {
         super(props);
         this.model = this.props.model;
-        this.state = {inputValue: DEFAULT_INPUT_VALUE, editing: false, editValue: DEFAULT_INPUT_VALUE};
+        this.state = {inputValue: DEFAULT_INPUT_VALUE, editing: false, editValue: ""};
         this.setAnnotationAttributeFromInputBox = this.setAnnotationAttributeFromInputBox.bind(this);
     }
 
     onClickVariableTextBox(e) {
-        this.setState({editing: true, editValue: DEFAULT_INPUT_VALUE});
+        this.setState({editing: true, editValue: ""});
     }
 
     onInputBlur(e) {
-        if (DEFAULT_INPUT_VALUE !== this.state.editValue) {
+        if (DEFAULT_INPUT_VALUE !== this.state.editValue && this.state.editValue !== "") {
             if (!this.addAnnotationAttribute()) {
                 e.preventDefault();
             }
         }
-        e.target.value = "";
-        this.setState({editing: false, editValue: DEFAULT_INPUT_VALUE})
+        this.setState({editing: false, editValue: ""})
     }
 
     onKeyDown(e) {
         if (e.keyCode === 13) {
             if (DEFAULT_INPUT_VALUE !== this.state.editValue) {
-                if (!this.addAnnotationAttribute()) {
-                    e.preventDefault();
+                if (this.validateAttribute(this.state.editValue)) {
+                    if (!this.addAnnotationAttribute()) {
+                        e.preventDefault();
+                    }
                 }
             }
-            e.target.value = "";
-            this.setState({editing: false, editValue: DEFAULT_INPUT_VALUE})
+            this.setState({editing: false, editValue: ""})
         }
     }
 
     onInputChange(e) {
-        // let validate = this.props.validateInput;
-        this.setState({editing: true, editValue: e.target.value.trim()});
         let variableDeclaration = e.target.value.replace(";", "");
-        if (this.validateAttribute(variableDeclaration)) {
-            this.setState({editing: true, editValue: variableDeclaration});
-        }
+        this.setState({editing: true, editValue: variableDeclaration});
     }
 
     validateAttribute(attribute) {
@@ -103,7 +99,7 @@ class AnnotationAttributeDecorator extends React.Component {
         let model = this.props.model;
         try {
             let variableDeclaration = this.state.editValue.trim();
-            if (DEFAULT_INPUT_VALUE !== variableDeclaration) {
+            if (DEFAULT_INPUT_VALUE !== variableDeclaration || variableDeclaration !== "") {
                 let splitedExpression = variableDeclaration.split("=");
                 let leftHandSideExpression = splitedExpression[0].trim();
                 let rightHandSideExpression;
@@ -157,8 +153,8 @@ class AnnotationAttributeDecorator extends React.Component {
                                   height={31}
                                   labelClass={"annotation-input-placeholder"}
                                   inputClass={"annotation-input-text-box"}
-                                  placeHolder={this.state.editValue}
-                                  canUpdate={false}
+                                  placeholder={DEFAULT_INPUT_VALUE}
+                                  displayText={DEFAULT_INPUT_VALUE}
                                   onKeyDown={e => {
                                       this.onKeyDown(e);
                                   }}
@@ -172,7 +168,7 @@ class AnnotationAttributeDecorator extends React.Component {
                                   onChange={e => {
                                       this.onInputChange(e)
                                   }}>
-                        {DEFAULT_INPUT_VALUE}
+                        {this.state.editValue}
                     </EditableText>
                 </g>
             </g>

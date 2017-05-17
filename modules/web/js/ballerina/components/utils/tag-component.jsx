@@ -19,6 +19,7 @@ import React from 'react';
 import EditableText from './../editable-text';
 import SuggestionsText from './../suggestions-text';
 import './tag-component.css';
+import {util} from "./../../visitors/sizing-utils";
 
 const DEFAULT_INPUT_VALUE = "+ Add Value";
 
@@ -59,7 +60,7 @@ class TagController extends React.Component {
      * */
     onInputBlur(e) {
         let setter = this.props.setter;
-        if (DEFAULT_INPUT_VALUE !== this.state.editValue) {
+        if (DEFAULT_INPUT_VALUE !== this.state.editValue && this.state.editValue !== "") {
             if (!setter(this.state.editValue)) {
                 e.preventDefault();
             }
@@ -121,7 +122,7 @@ class TagController extends React.Component {
                     <text x={componentData.components.closingBracket.x - 98}
                           y={componentData.components.closingBracket.y + 17}
                           className="tag-component-attachment-text">
-                        + Add Value
+                        {DEFAULT_INPUT_VALUE}
                     </text>
                     <SuggestionsText x={componentData.components.closingBracket.x - 102}
                                      y={componentData.components.closingBracket.y}
@@ -170,7 +171,8 @@ class TagController extends React.Component {
                                           y={componentData.components.closingBracket.y + 25 / 2}
                                           width={93}
                                           height={26}
-                                          className="tag-component-editable-text-box"
+                                          labelClass={"tag-component-label"}
+                                          inputClass={"tag-component-input-text-box"}
                                           displayText={DEFAULT_INPUT_VALUE}
                                           placeholder={DEFAULT_INPUT_VALUE}
                                           onKeyDown={e => {
@@ -220,7 +222,8 @@ class TagController extends React.Component {
                                           y={componentData.components.closingBracket.y + 25 / 2}
                                           width={93}
                                           height={26}
-                                          className="tag-component-editable-text-box"
+                                          labelClass={"tag-component-label"}
+                                          inputClass={"tag-component-input-text-box"}
                                           displayText={DEFAULT_INPUT_VALUE}
                                           placeholder={DEFAULT_INPUT_VALUE}
                                           onKeyDown={e => {
