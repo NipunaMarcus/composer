@@ -25,7 +25,7 @@ import Renderer from './renderer';
 import PropTypes from 'prop-types';
 import EditableText from './editable-text';
 
-const DEFAULT_INPUT_VALUE = "+ Add Variable";
+const DEFAULT_INPUT_VALUE = "+ Add Attribute";
 
 /**
  * Annotation Attribute Decorator
@@ -43,6 +43,11 @@ class AnnotationAttributeDecorator extends React.Component {
     }
 
     onInputBlur(e) {
+        if (DEFAULT_INPUT_VALUE !== this.state.editValue) {
+            if (!this.addAnnotationAttribute()) {
+                e.preventDefault();
+            }
+        }
         e.target.value = "";
         this.setState({editing: false, editValue: DEFAULT_INPUT_VALUE})
     }
@@ -150,7 +155,8 @@ class AnnotationAttributeDecorator extends React.Component {
                                   y={bBox.y + 65}
                                   width={331}
                                   height={31}
-                                  className="annotation-input-placeholder"
+                                  labelClass={"annotation-input-placeholder"}
+                                  inputClass={"annotation-input-text-box"}
                                   placeHolder={this.state.editValue}
                                   canUpdate={false}
                                   onKeyDown={e => {

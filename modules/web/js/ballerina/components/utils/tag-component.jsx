@@ -58,6 +58,12 @@ class TagController extends React.Component {
      * @param {object} e - Event
      * */
     onInputBlur(e) {
+        let setter = this.props.setter;
+        if (DEFAULT_INPUT_VALUE !== this.state.editValue) {
+            if (!setter(this.state.editValue)) {
+                e.preventDefault();
+            }
+        }
         e.target.value = "";
         this.setState({editing: false, editValue: DEFAULT_INPUT_VALUE});
     }
@@ -190,7 +196,8 @@ class TagController extends React.Component {
             } else {
                 return (
                     <g key={componentData.title}>
-                        <rect x={componentData.components.openingBracket.x - 3} y={componentData.components.openingBracket.y}
+                        <rect x={componentData.components.openingBracket.x - 3}
+                              y={componentData.components.openingBracket.y}
                               width={componentData.components.closingBracket.x - (componentData.components.openingBracket.x - 3)
                               + componentData.components.closingBracket.w}
                               height={25} className={this.props.groupClass}/>
