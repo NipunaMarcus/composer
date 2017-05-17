@@ -48,9 +48,9 @@ class EditableText extends React.Component {
 
         const inputProps = {
             ref: input => {
-                if (input !== null) {
-                    input.focus();
-                }
+                        if (input !== null) {
+                        input.focus();
+                    }
             },
             style: inputStyle,
             onChange,
@@ -61,13 +61,12 @@ class EditableText extends React.Component {
         };
 
         const inputElement = (<input {...inputProps} className={inputClass}/>);
-
         ReactDOM.render(inputElement, this.context.overlay);
     }
 
     componentDidUpdate(prevProps) {
-        const editingJustFinished = prevProps.editing && !this.props.editing;
-        if (this.props.editing || editingJustFinished) {
+        const editingJustFinished = prevProps.editing && !this.props.editing
+        if(this.props.editing || editingJustFinished) {
             this.renderTextBox();
         }
     }
@@ -88,10 +87,11 @@ class EditableText extends React.Component {
             dominantBaseline: 'central'
         };
 
-        return (
+            return (
             <text {...textProps}
                   className={this.props.labelClass}>{ this.props.displayText || this.props.children }</text>
         );
+
     }
 }
 

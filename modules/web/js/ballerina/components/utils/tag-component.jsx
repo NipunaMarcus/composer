@@ -65,7 +65,6 @@ class TagController extends React.Component {
                 e.preventDefault();
             }
         }
-        e.target.value = "";
         this.setState({editing: false, editValue: ''});
     }
 
@@ -81,11 +80,10 @@ class TagController extends React.Component {
             if (!validate(variableDeclaration)) {
                 return;
             }
-
             let setter = this.props.setter;
-            if (!setter(this.state.editValue)) {
+                if (!setter(this.state.editValue)) {
                 return;
-            }
+                }
             this.setState({editing: false, editValue: ''});
         }
     }
