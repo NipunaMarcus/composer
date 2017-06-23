@@ -132,75 +132,79 @@ class AssignmentStatement extends React.Component {
         const expression = model.viewState.expression;
         const bBox = model.getViewState().bBox;
 
-        const innerZoneHeight = model.getViewState().components['drop-zone'].h;
+        if(!model.viewState.components.collapse.isCollapsed) {
+            const innerZoneHeight = model.getViewState().components['drop-zone'].h;
 
-        // calculate the bBox for the statement
-        this.statementBox = {};
-        this.statementBox.h = bBox.h - innerZoneHeight;
-        this.statementBox.y = bBox.y + innerZoneHeight;
-        this.statementBox.w = bBox.w;
-        this.statementBox.x = bBox.x;
+            // calculate the bBox for the statement
+            this.statementBox = {};
+            this.statementBox.h = bBox.h - innerZoneHeight;
+            this.statementBox.y = bBox.y + innerZoneHeight;
+            this.statementBox.w = bBox.w;
+            this.statementBox.x = bBox.x;
 
-        const arrowStartPointX = bBox.getRight();
-        const arrowStartPointY = this.statementBox.y + (this.statementBox.h / 2);
-        const radius = 10;
-        const actionInvocation = BallerinaASTFactory.isActionInvocationExpression(
-                        model.getChildren()[1].getChildren()[0]) ? model.getChildren()[1].getChildren()[0] : undefined;
-        let connector;
-        const arrowStart = { x: 0, y: 0 };
-        const arrowEnd = { x: 0, y: 0 };
-        const backArrowStart = { x: 0, y: 0 };
-        const backArrowEnd = { x: 0, y: 0 };
+            const arrowStartPointX = bBox.getRight();
+            const arrowStartPointY = this.statementBox.y + (this.statementBox.h / 2);
+            const radius = 10;
+            const actionInvocation = BallerinaASTFactory.isActionInvocationExpression(
+                model.getChildren()[1].getChildren()[0]) ? model.getChildren()[1].getChildren()[0] : undefined;
+            let connector;
+            const arrowStart = {x: 0, y: 0};
+            const arrowEnd = {x: 0, y: 0};
+            const backArrowStart = {x: 0, y: 0};
+            const backArrowEnd = {x: 0, y: 0};
 
-        if (!_.isNil(actionInvocation) && !_.isNil(actionInvocation.getConnector())) {
-            connector = actionInvocation.getConnector();
+            if (!_.isNil(actionInvocation) && !_.isNil(actionInvocation.getConnector())) {
+                connector = actionInvocation.getConnector();
 
-            // TODO: need a proper way to do this
-            const isConnectorAvailable = !_.isEmpty(connector.getParent().filterChildren(
-                                                                                child => child.id === connector.id));
+                // TODO: need a proper way to do this
+                const isConnectorAvailable = !_.isEmpty(connector.getParent().filterChildren(
+                    child => child.id === connector.id));
 
-            arrowStart.x = this.statementBox.x + this.statementBox.w;
-            arrowStart.y = this.statementBox.y + (this.statementBox.h / 3);
+                arrowStart.x = this.statementBox.x + this.statementBox.w;
+                arrowStart.y = this.statementBox.y + (this.statementBox.h / 3);
 
-            if (!isConnectorAvailable) {
-                connector = undefined;
-                actionInvocation.setConnector(undefined);
-            } else {
-                arrowEnd.x = connector.getViewState().bBox.x + (connector.getViewState().bBox.w / 2);
+                if (!isConnectorAvailable) {
+                    connector = undefined;
+                    actionInvocation.setConnector(undefined);
+                } else {
+                    arrowEnd.x = connector.getViewState().bBox.x + (connector.getViewState().bBox.w / 2);
+                }
+
+                arrowEnd.y = arrowStart.y;
+                backArrowStart.x = arrowEnd.x;
+                backArrowStart.y = this.statementBox.y + (2 * this.statementBox.h / 3);
+                backArrowEnd.x = arrowStart.x;
+                backArrowEnd.y = backArrowStart.y;
             }
 
-            arrowEnd.y = arrowStart.y;
-            backArrowStart.x = arrowEnd.x;
-            backArrowStart.y = this.statementBox.y + (2 * this.statementBox.h / 3);
-            backArrowEnd.x = arrowStart.x;
-            backArrowEnd.y = backArrowStart.y;
+
+            return (<StatementDecorator
+                viewState={model.viewState}
+                expression={expression}
+                editorOptions={this.editorOptions}
+                model={model}
+            >
+                {!_.isNil(actionInvocation) &&
+                <g>
+                    <circle
+                        cx={arrowStartPointX}
+                        cy={arrowStartPointY}
+                        r={radius}
+                        fill="#444"
+                        fillOpacity={0}
+                        onMouseOver={e => this.onArrowStartPointMouseOver(e)}
+                        onMouseOut={e => this.onArrowStartPointMouseOut(e)}
+                        onMouseDown={e => this.onMouseDown(e)}
+                        onMouseUp={e => this.onMouseUp(e)}
+                    />
+                    {connector && <ArrowDecorator start={arrowStart} end={arrowEnd} enable/>}
+                    {connector && <BackwardArrowDecorator start={backArrowStart} end={backArrowEnd} enable/>}
+                </g>
+                }
+            </StatementDecorator>);
+        }else{
+            return null;
         }
-
-
-        return (<StatementDecorator
-            viewState={model.viewState}
-            expression={expression}
-            editorOptions={this.editorOptions}
-            model={model}
-        >
-            {!_.isNil(actionInvocation) &&
-            <g>
-                <circle
-                    cx={arrowStartPointX}
-                    cy={arrowStartPointY}
-                    r={radius}
-                    fill="#444"
-                    fillOpacity={0}
-                    onMouseOver={e => this.onArrowStartPointMouseOver(e)}
-                    onMouseOut={e => this.onArrowStartPointMouseOut(e)}
-                    onMouseDown={e => this.onMouseDown(e)}
-                    onMouseUp={e => this.onMouseUp(e)}
-                />
-                {connector && <ArrowDecorator start={arrowStart} end={arrowEnd} enable />}
-                {connector && <BackwardArrowDecorator start={backArrowStart} end={backArrowEnd} enable />}
-            </g>
-            }
-        </StatementDecorator>);
     }
 }
 

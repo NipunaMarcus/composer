@@ -28,6 +28,8 @@ import MessageManager from './../visitors/message-manager';
 import Renderer from './renderer';
 import ActiveArbiter from './active-arbiter';
 import StructOperationsRenderer from './struct-operations-renderer';
+import CollapseVisitor from "../visitors/collapse-visitor";
+import CollapsePositionVisitor from '../visitors/collapsed-position-calc';
 
 /**
  * React component for diagram.
@@ -122,12 +124,24 @@ class Diagram extends React.Component {
             width: this.container.width(),
             height: this.container.height(),
         };
+
+        const otherNodes = [];
+
+        // 3.2 check whether collapse enabled. If so accept the collapse dimension visitor.
+        const collapseVisitor = new CollapseVisitor();
+        debugger;
+        this.model.accept(collapseVisitor);
+        let collapsedViews = [];
+        if (collapseVisitor.getCollapsedViews()) {
+            collapsedViews = getComponentForNodeArray(collapseVisitor.getCollapsedViews());
+        }
+
         // 2. Now we will visit the model again and calculate position of each node
         //    in the tree. We will use PositionCalcVisitor for this.
         this.model.accept(this.positionCalc);
         // 3. Now we need to create component for each child of root node.
         let [others] = [undefined, [], [], []];
-        const otherNodes = [];
+
         this.model.children.forEach((child) => {
             switch (child.constructor.name) {
             case 'ImportDeclaration':
@@ -138,7 +152,17 @@ class Diagram extends React.Component {
                 otherNodes.push(child);
             }
         });
+
+        // collapse view position visitor.
+        const collapsePositionVisitor = new CollapsePositionVisitor(collapseVisitor.getCollapsedViews());
+        collapsePositionVisitor.beginVisit();
+
+        collapseVisitor.getCollapsedViews().forEach((child) => {
+            otherNodes.push(child);
+        });
+
         others = getComponentForNodeArray(otherNodes);
+
         // 3.1 lets filter out annotations so we can overlay html on top of svg.
         const annotationRenderer = new AnnotationRenderingVisitor();
         this.model.accept(annotationRenderer);
@@ -148,7 +172,7 @@ class Diagram extends React.Component {
         }
 
         // 4. Ok we are all set, now lets render the diagram with React. We will create
-        //    s CsnvasDecorator and pass child components for that.
+        //    CanvasDecorator and pass child components for that.
 
         return (<CanvasDecorator
             dropTarget={this.model}
