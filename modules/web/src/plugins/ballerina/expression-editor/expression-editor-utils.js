@@ -19,10 +19,10 @@ import log from 'log';
 import 'brace';
 import 'brace/ext/language_tools';
 import 'brace/ext/searchbox';
-import 'plugins/ballerina/utils/ace-mode';
-import DesignViewCompleterFactory from 'plugins/ballerina/utils/design-view-completer-factory';
-import TreeUtil from 'plugins/ballerina/model/tree-util';
-import splitVariableDefByLambda from 'plugins/ballerina/model/lambda-util';
+import 'ballerina/utils/ace-mode';
+import DesignViewCompleterFactory from 'ballerina/utils/design-view-completer-factory';
+import TreeUtil from 'ballerina/model/tree-util';
+import splitVariableDefByLambda from 'ballerina/model/lambda-util';
 import { getLangServerClientInstance } from 'plugins/ballerina/langserver/lang-server-client-controller';
 
 const ace = global.ace;
@@ -256,10 +256,7 @@ class ExpressionEditor {
 
                     didSemicolon = true;
                     props.model.trigger('focus-out');
-                    setTimeout(() => {
-                        this.destroy();
-                    }, 0);
-
+                    this.destroy();
                     if (_.isFunction(callback)) {
                         callback(text);
                     }

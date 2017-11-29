@@ -30,7 +30,7 @@ AnnotationAttachment
    ;
 
 AnnotationAttachmentAttribute
-   : <name.value> : <value.source>
+   : <name> : <value.source>
    ;
 
 AnnotationAttachmentAttributeValue
