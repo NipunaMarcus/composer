@@ -25,14 +25,18 @@ const UnusedFilesWebpackPlugin = require('unused-files-webpack-plugin').UnusedFi
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const WebfontPlugin = require('webpack-webfont').default;
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
-const extractThemes = new ExtractTextPlugin('./[name].css');
-const extractCSSBundle = new ExtractTextPlugin('./bundle.css');
+const extractThemes = new ExtractTextPlugin({ filename: './[name].css', allChunks: true });
+const extractCSSBundle = new ExtractTextPlugin({ filename: './bundle-[name].css', allChunks: true });
 let exportConfig = {};
 const config = [{
+    target: 'web',
     entry: {
         bundle: './src/index.js',
-        'worker-ballerina': './js/ballerina/utils/ace-worker.js',
+        tree: './src/plugins/ballerina/model/tree-builder.js',
+        testable: './src/plugins/ballerina/tests/testable.js',
+        'worker-ballerina': './src/plugins/ballerina/utils/ace-worker.js',
     },
     output: {
         filename: '[name].js',
@@ -94,6 +98,19 @@ const config = [{
     },
     plugins: [
         new ProgressBarPlugin(),
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'tree',
+            chunks: ['bundle', 'tree', 'testable'],
+            minChunks: Infinity,
+        }),
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor',
+            chunks: ['bundle', 'tree', 'testable'],
+            minChunks(module) {
+                const context = module.context;
+                return context && context.indexOf('node_modules') >= 0;
+            },
+        }),
         extractCSSBundle,
         // new UnusedFilesWebpackPlugin({
         //    pattern: 'js/**/*.*',
@@ -145,7 +162,7 @@ const config = [{
     devtool: 'source-map',
     resolve: {
         extensions: ['.js', '.json', '.jsx'],
-        modules: ['src', 'public/lib', 'font/dist', 'js', 'node_modules', path.resolve(__dirname)],
+        modules: ['src', 'public/lib', 'font/dist', 'node_modules', path.resolve(__dirname)],
         alias: {
             // ///////////////////////
             // third party modules //
@@ -210,11 +227,14 @@ if (process.env.NODE_ENV === 'production') {
 
     // Add UglifyJsPlugin only when we build for production.
     // uglyfying slows down webpack build so we avoid in when in development
-    config[0].plugins.push(new webpack.optimize.UglifyJsPlugin({
+    config[0].plugins.push(new UglifyJsPlugin({
         sourceMap: true,
-        mangle: {
-            keep_fnames: true,
-        },
+        parallel: true,
+        uglifyOptions: {
+            mangle: {
+                keep_fnames: true,
+            },
+        }
     }));
 } else {
     config[0].plugins.push(new webpack.DefinePlugin({
@@ -229,7 +249,7 @@ if (process.env.NODE_ENV === 'test') {
 } else if (process.env.NODE_ENV === 'test-source-gen-dev') {
     const testConfig = config[0];
     testConfig.target = 'node';
-    testConfig.entry = './js/tests/js/spec/ballerina-test.js';
+    testConfig.entry = './src/plugins/ballerina/tests/js/spec/ballerina-test.js';
     testConfig.output = {
         path: path.resolve(__dirname, 'target'),
         filename: 'ballerina-test.js',

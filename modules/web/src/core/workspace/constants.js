@@ -32,7 +32,10 @@ export const COMMANDS = {
 };
 
 export const EVENTS = {
+    FILE_OPENED: 'file-opened',
     FILE_UPDATED: 'file-updated',
+    FILE_SAVED: 'file-saved',
+    FILE_CLOSED: 'file-closed',
     DIRTY_STATE_CHANGE: 'dirty-state-change',
     CONTENT_MODIFIED: 'content-modified',
 };
@@ -77,7 +80,7 @@ export const DIALOGS = {
 
 export const HISTORY = {
     OPENED_FILES: 'composer.workspace.opened-files',
-    OPENED_FOLDERS: 'composer.workspace.opened-folders',
+    OPENED_FOLDERS: 'composer.workspace.opened-workspace-folders',
 };
 
 export const PLUGIN_ID = 'composer.plugin.workspace.manager';

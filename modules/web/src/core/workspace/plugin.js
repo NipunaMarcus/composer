@@ -38,6 +38,7 @@ import FileDeleteConfirmDialog from './dialogs/FileDeleteConfirmDialog';
 
 import { read } from './fs-util';
 import File from './model/file';
+import Folder from './model/folder';
 
 const skipEventSerialization = (key, value) => {
     return key === '_events' ? undefined : value;
@@ -59,6 +60,7 @@ class WorkspacePlugin extends Plugin {
         this.openedFiles = [];
         this._selectedNodeInExplorer = undefined;
         this.onWorkspaceFileUpdated = this.onWorkspaceFileUpdated.bind(this);
+        this.onWorkspaceFileContentChanged = this.onWorkspaceFileContentChanged.bind(this);
         this.onNodeSelectedInExplorer = this.onNodeSelectedInExplorer.bind(this);
     }
 
@@ -80,9 +82,17 @@ class WorkspacePlugin extends Plugin {
     /**
      * On an opened file in workspace update
      */
-    onWorkspaceFileUpdated() {
+    onWorkspaceFileUpdated(file) {
         const { pref: { history } } = this.appContext;
         history.put(HISTORY.OPENED_FILES, this.openedFiles, skipEventSerialization);
+    }
+
+    /**
+     * On content of a file updated
+     */
+    onWorkspaceFileContentChanged({ file }) {
+        const { command: { dispatch } } = this.appContext;
+        dispatch(EVENTS.FILE_UPDATED, { file });
     }
 
     /**
@@ -113,6 +123,7 @@ class WorkspacePlugin extends Plugin {
     openFile(filePath, type = 'bal', activate = true) {
         return new Promise((resolve, reject) => {
             const indexInOpenedFiles = _.findIndex(this.openedFiles, file => file.fullPath === filePath);
+            const { command: { dispatch } } = this.appContext;
             // if not already opened
             if (indexInOpenedFiles === -1) {
                 read(filePath)
@@ -122,14 +133,15 @@ class WorkspacePlugin extends Plugin {
                         const { pref: { history }, editor } = this.appContext;
                         history.put(HISTORY.OPENED_FILES, this.openedFiles, skipEventSerialization);
                         file.on(EVENTS.FILE_UPDATED, this.onWorkspaceFileUpdated);
+                        file.on(EVENTS.CONTENT_MODIFIED, this.onWorkspaceFileContentChanged);
                         editor.open(file, activate);
+                        dispatch(EVENTS.FILE_OPENED, { file });
                         resolve(file);
                     })
                     .catch((err) => {
                         reject(JSON.stringify(err));
                     });
             } else {
-                const { command: { dispatch } } = this.appContext;
                 dispatch(EDITOR_COMMANDS.ACTIVATE_EDITOR_FOR_FILE, {
                     filePath,
                 });
@@ -167,7 +179,7 @@ class WorkspacePlugin extends Plugin {
      */
     isFilePathOpenedInExplorer(filePath) {
         return this.openedFolders.find((folder) => {
-            return filePath.startsWith(folder);
+            return filePath.startsWith(folder.fullPath);
         }) !== undefined;
     }
 
@@ -193,9 +205,11 @@ class WorkspacePlugin extends Plugin {
         return new Promise((resolve, reject) => {
             if (this.openedFiles.includes(file)) {
                 _.remove(this.openedFiles, file);
-                const { pref: { history } } = this.appContext;
+                const { pref: { history }, command: { dispatch } } = this.appContext;
                 history.put(HISTORY.OPENED_FILES, this.openedFiles, skipEventSerialization);
                 file.off(EVENTS.FILE_UPDATED, this.onWorkspaceFileUpdated);
+                file.off(EVENTS.CONTENT_MODIFIED, this.onWorkspaceFileContentChanged);
+                dispatch(EVENTS.FILE_CLOSED, { file });
             } else {
                 reject(`File ${file.fullPath} cannot be found in opened file set.`);
             }
@@ -210,9 +224,9 @@ class WorkspacePlugin extends Plugin {
      */
     openFolder(folderPath) {
         return new Promise((resolve, reject) => {
-            // add path to opened folders list - if not added alreadt
-            if (_.findIndex(this.openedFolders, folder => folder === folderPath) === -1) {
-                this.openedFolders.push(folderPath);
+            // add path to opened folders list - if not added already
+            if (_.findIndex(this.openedFolders, folder => folder.fullPath === folderPath) === -1) {
+                this.openedFolders.push(new Folder({ fullPath: folderPath }));
                 const { pref: { history } } = this.appContext;
                 history.put(HISTORY.OPENED_FOLDERS, this.openedFolders);
                 this.reRender();
@@ -231,8 +245,8 @@ class WorkspacePlugin extends Plugin {
      */
     removeFolder(folderPath) {
         return new Promise((resolve, reject) => {
-            if (_.findIndex(this.openedFolders, folder => folder === folderPath) !== -1) {
-                _.remove(this.openedFolders, folder => folder === folderPath);
+            if (_.findIndex(this.openedFolders, folder => folder.fullPath === folderPath) !== -1) {
+                _.remove(this.openedFolders, folder => folder.fullPath === folderPath);
                 const { pref: { history } } = this.appContext;
                 history.put(HISTORY.OPENED_FOLDERS, this.openedFolders);
                 this.reRender();
@@ -264,7 +278,10 @@ class WorkspacePlugin extends Plugin {
     activate(appContext) {
         super.activate(appContext);
         const { pref: { history } } = appContext;
-        this.openedFolders = history.get(HISTORY.OPENED_FOLDERS) || [];
+        const serializedFolders = history.get(HISTORY.OPENED_FOLDERS) || [];
+        this.openedFolders = serializedFolders.map((serializedFolder) => {
+            return Object.assign(new Folder({}), serializedFolder);
+        });
         // make File objects for each serialized file
         const serializedFiles = history.get(HISTORY.OPENED_FILES) || [];
         this.openedFiles = serializedFiles.map((serializedFile) => {
